@@ -27,7 +27,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   List<Course> _upcomingCourses = [];
   final List<Map<String, dynamic>> _stats = [];
   User? _currentUser;
-  UserStats? _userStats;
+  // UserStats? _userStats; // No longer storing _userStats directly in state this way for default
+  bool _userStatsUnavailable = false;
+  String? _pendingErrorMessage;
 
   @override
   void initState() {
@@ -37,10 +39,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   Future<void> _loadData() async {
     if (!mounted) return;
+    if (!mounted) return;
     
     setState(() {
       _isLoading = true;
+      _userStatsUnavailable = false; // Reset on load
+      // _pendingErrorMessage = null; // Reset pending error message: Moved slightly below
     });
+    _pendingErrorMessage = null; // Reset here after the initial setState
 
     try {
       final apiService = ref.read(apiServiceProvider);
@@ -73,24 +79,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       final upcomingBookings = results[0] as List<Booking>? ?? [];
       final userStats = results[1] as UserStats?;
       
-      // Si les statistiques sont nulles, créer un objet par défaut
-      final DateTime now = DateTime.now();
-      // Création d'un UserStats par défaut si nécessaire
       if (userStats == null) {
-        setState(() {
-          _userStats = UserStats(
-            id: 'temp-${now.millisecondsSinceEpoch}',
-            userId: _currentUser?.id ?? '',
-            totalSessions: 0,
-            totalMinutes: 0,
-            caloriesBurned: 0,
-            activityBreakdown: {},
-            startDate: now.subtract(const Duration(days: 30)),
-            endDate: now,
-            createdAt: now,
-            updatedAt: now,
-          );
-        });
+        if (mounted) {
+          setState(() {
+            _userStatsUnavailable = true;
+          });
+        }
       }
       
       // Récupérer les IDs des cours uniques
@@ -111,32 +105,36 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       setState(() {
         _upcomingCourses = courses.take(3).toList(); // Limiter à 3 cours pour l'affichage
         
-        // Mettre à jour les statistiques avec les données réelles
-        _stats.clear();
-        _stats.addAll([
-          {
-            'title': 'Cours suivis',
-            'value': '${userStats?.totalBookings ?? 0}',
-            'icon': Icons.fitness_center,
-            'showTrend': true,
-            'trendValue': 0.0, // Valeur par défaut car improvementRate n'existe plus
-            'isPositiveTrend': true,
-          },
-          {
-            'title': 'Heures d\'entraînement',
-            'value': userStats?.totalHours?.toStringAsFixed(1) ?? '0.0',
-            'icon': Icons.timer,
-            'showTrend': true,
-            'trendValue': 0.0, // Valeur par défaut car consistency n'existe plus
-            'isPositiveTrend': true,
-          },
-          {
-            'title': 'Activité favorite',
-            'value': userStats?.favoriteActivity ?? 'Aucune',
-            'icon': Icons.favorite,
-            'showTrend': false,
-          },
-        ]);
+        if (userStats != null) {
+          // Mettre à jour les statistiques avec les données réelles
+          _stats.clear();
+          _stats.addAll([
+            {
+              'title': 'Cours suivis',
+              'value': '${userStats.totalBookings}', // No longer nullable here
+              'icon': Icons.fitness_center,
+              'showTrend': true,
+              'trendValue': 0.0,
+              'isPositiveTrend': true,
+            },
+            {
+              'title': 'Heures d\'entraînement',
+              'value': userStats.totalHours.toStringAsFixed(1), // No longer nullable here
+              'icon': Icons.timer,
+              'showTrend': true,
+              'trendValue': 0.0,
+              'isPositiveTrend': true,
+            },
+            {
+              'title': 'Activité favorite',
+              'value': userStats.favoriteActivity, // No longer nullable here
+              'icon': Icons.favorite,
+              'showTrend': false,
+            },
+          ]);
+        } else {
+          _stats.clear(); // Ensure stats are cleared if unavailable
+        }
         
         _isLoading = false;
       });
@@ -145,20 +143,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         print('Erreur lors du chargement des données: $e');
       }
       
-      if (!mounted) return;
-      
-      // Afficher un message d'erreur plus détaillé
       String errorMessage = 'Erreur lors du chargement des données';
       if (e is Exception) {
         errorMessage = e.toString();
       }
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(errorMessage),
-          backgroundColor: Colors.red,
-        ),
-      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
+          ),
+        );
+      } else {
+        _pendingErrorMessage = errorMessage;
+      }
       
       // Rediriger vers l'écran de connexion en cas d'erreur d'authentification
       if (e.toString().contains('non authentifié') || e.toString().contains('non connecté')) {
@@ -188,6 +187,24 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (_pendingErrorMessage != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(_pendingErrorMessage!),
+            backgroundColor: Colors.red,
+          ),
+        );
+        // setState est nécessaire pour reconstruire et éviter que le message ne s'affiche à nouveau
+        // si build est appelé pour une autre raison avant que _loadData ne soit à nouveau appelé.
+        if (mounted) { // Vérifier à nouveau au cas où le widget serait disposé pendant la frame.
+          setState(() {
+            _pendingErrorMessage = null;
+          });
+        }
+      }
+    });
+
     return Scaffold(
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -240,30 +257,48 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ),
                           ),
                           const SizedBox(height: 8),
-                          SizedBox(
-                            height: 120,
-                            child: ListView.builder(
-                              scrollDirection: Axis.horizontal,
-                              itemCount: _stats.length,
-                              itemBuilder: (context, index) {
-                                final stat = _stats[index];
-                                return SizedBox(
-                                  width: MediaQuery.of(context).size.width * 0.6,
-                                  child: StatCard(
-                                    title: stat['title'],
-                                    value: stat['value'],
-                                    icon: stat['icon'],
-                                    showTrend: stat['showTrend'],
-                                    trendValue: stat['trendValue'],
-                                    isPositiveTrend: stat['isPositiveTrend'],
-                                    onTap: () {
-                                      context.go('/stats');
-                                    },
+                          if (_userStatsUnavailable)
+                            SizedBox(
+                              height: 120,
+                              child: Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: Text(
+                                    'User statistics are currently unavailable.',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: SpotaTheme.secondaryTextColor,
+                                    ),
+                                    textAlign: TextAlign.center,
                                   ),
-                                );
-                              },
+                                ),
+                              ),
+                            )
+                          else
+                            SizedBox(
+                              height: 120,
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _stats.length,
+                                itemBuilder: (context, index) {
+                                  final stat = _stats[index];
+                                  return SizedBox(
+                                    width: MediaQuery.of(context).size.width * 0.6,
+                                    child: StatCard(
+                                      title: stat['title'],
+                                      value: stat['value'],
+                                      icon: stat['icon'],
+                                      showTrend: stat['showTrend'],
+                                      trendValue: stat['trendValue'],
+                                      isPositiveTrend: stat['isPositiveTrend'],
+                                      onTap: () {
+                                        context.go('/stats');
+                                      },
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
-                          ),
                           
                           const SizedBox(height: 24),
                           

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 // Screens
 import 'screens/login_screen.dart';
@@ -16,6 +17,7 @@ import 'screens/notifications_screen.dart';
 import 'screens/favorites_screen.dart';
 import 'screens/help_support_screen.dart';
 import 'screens/profile_settings_screen.dart';
+import 'screens/course_details_screen.dart'; // Import for CourseDetailsScreen
 
 // Widgets
 import 'widgets/bottom_navbar.dart';
@@ -127,10 +129,38 @@ class AppRouter {
         builder: (context, state) => const ProfileSettingsScreen(),
         parentNavigatorKey: _rootNavigatorKey,
       ),
+      GoRoute(
+        path: '/course-details/:courseId',
+        name: 'courseDetails',
+        builder: (context, state) => CourseDetailsScreen(
+          courseId: state.pathParameters['courseId']!,
+        ),
+        parentNavigatorKey: _rootNavigatorKey,
+      ),
     ],
-    redirect: (context, state) {
-      // TODO: Implémenter la redirection en fonction de l'état d'authentification
-      // Exemple: Si l'utilisateur n'est pas connecté et essaie d'accéder à une page protégée, rediriger vers /login
+    redirect: (BuildContext context, GoRouterState state) {
+      final session = Supabase.instance.client.auth.currentSession;
+      final isAuthenticated = session != null;
+      final goingTo = state.matchedLocation;
+
+      // Définir les routes publiques (accessibles sans authentification)
+      const publicRoutes = ['/login', '/signup', '/reset-password'];
+
+      // Si l'utilisateur n'est pas authentifié
+      if (!isAuthenticated) {
+        // Si la route n'est pas publique, rediriger vers /login
+        if (!publicRoutes.contains(goingTo)) {
+          return '/login';
+        }
+      } else {
+        // Si l'utilisateur est authentifié
+        // Et essaie d'accéder à /login ou /signup, rediriger vers /home
+        if (goingTo == '/login' || goingTo == '/signup') {
+          return '/home';
+        }
+      }
+
+      // Aucune redirection nécessaire
       return null;
     },
   );

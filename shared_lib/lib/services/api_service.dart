@@ -515,13 +515,7 @@ class ApiService {
     if (user == null) {
       throw Exception("Utilisateur non authentifié");
     }
-
-    await _supabaseClient.from(SupabaseConfig.favoritesTable).insert({
-      'user_id': user.id,
-      'item_id': courseId,
-      'item_type': 'course',
-      'created_at': DateTime.now().toIso8601String(),
-    });
+    await addFavorite(user.id, courseId, 'course');
   }
 
   Future<void> addFavoriteCoach(String coachId) async {
@@ -529,13 +523,7 @@ class ApiService {
     if (user == null) {
       throw Exception("Utilisateur non authentifié");
     }
-
-    await _supabaseClient.from(SupabaseConfig.favoritesTable).insert({
-      'user_id': user.id,
-      'item_id': coachId,
-      'item_type': 'coach',
-      'created_at': DateTime.now().toIso8601String(),
-    });
+    await addFavorite(user.id, coachId, 'coach');
   }
 
   Future<void> removeFavoriteCourse(String courseId) async {
@@ -543,13 +531,7 @@ class ApiService {
     if (user == null) {
       throw Exception("Utilisateur non authentifié");
     }
-
-    await _supabaseClient
-        .from(SupabaseConfig.favoritesTable)
-        .delete()
-        .eq('user_id', user.id)
-        .eq('item_id', courseId)
-        .eq('item_type', 'course');
+    await removeFavorite(user.id, courseId, 'course');
   }
 
   Future<void> removeFavoriteCoach(String coachId) async {
@@ -557,13 +539,7 @@ class ApiService {
     if (user == null) {
       throw Exception("Utilisateur non authentifié");
     }
-
-    await _supabaseClient
-        .from(SupabaseConfig.favoritesTable)
-        .delete()
-        .eq('user_id', user.id)
-        .eq('item_id', coachId)
-        .eq('item_type', 'coach');
+    await removeFavorite(user.id, coachId, 'coach');
   }
 
   Future<void> addFavorite(String userId, String itemId, String itemType) async {
