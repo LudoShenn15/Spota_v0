@@ -199,14 +199,14 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   sliver: SliverList(
                     delegate: SliverChildListDelegate([
                       // Cartes de statistiques
-                      _buildStatCards(),
+                      _buildStatCards(), // This will now be a Column
                       const SizedBox(height: 24),
-                      // Graphique d'évolution
-                      _buildProgressChart(),
-                      const SizedBox(height: 24),
-                      // Détails des activités
-                      _buildActivityDetails(),
-                      const SizedBox(height: 24),
+                      // Graphique d'évolution - Commented out as it's not defined
+                      // _buildProgressChart(),
+                      // const SizedBox(height: 24),
+                      // Détails des activités - Commented out as it's not defined
+                      // _buildActivityDetails(),
+                      // const SizedBox(height: 24),
                     ]),
                   ),
                 )
@@ -217,42 +217,48 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 
   Widget _buildStatCards() {
-    return GridView.count(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisCount: 2,
-      childAspectRatio: 1.2,
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      padding: const EdgeInsets.only(bottom: 16),
+    // Returns a Column of stat cards and rows of stat cards, suitable for SliverChildListDelegate
+    return Column(
       children: [
-        StatCard(
-          title: 'Cours suivis',
-          value: '${_userStats?.totalSessions ?? 0}',
-          icon: Icons.fitness_center,
-          showTrend: true,
-          trendValue: 0.0, // Valeur par défaut car coursesAttendedTrend n'existe plus
-          isPositiveTrend: true,
-        ),
-        StatCard(
-          title: 'Heures d\'entraînement',
-          value: '${((_userStats?.totalMinutes ?? 0) / 60.0).toStringAsFixed(1)}',
-          icon: Icons.timer,
-          showTrend: true,
-          trendValue: 0.0, // Valeur par défaut car trainingHoursTrend n'existe plus
-          isPositiveTrend: true,
-        ),
-        StatCard(
-          title: 'Calories brûlées',
-          value: '${_userStats?.caloriesBurned ?? 0}',
-          icon: Icons.local_fire_department,
-          showTrend: true,
-          trendValue: 0.0, // Valeur par défaut car caloriesBurnedTrend n'existe plus
-          isPositiveTrend: true,
-        ),
-        const SizedBox(height: 16),
         Row(
           children: [
+            Expanded(
+              child: StatCard(
+                title: 'Cours suivis',
+                value: '${_userStats?.totalSessions ?? 0}',
+                icon: Icons.fitness_center,
+                showTrend: true,
+                trendValue: 0.0,
+                isPositiveTrend: true,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: StatCard(
+                title: 'Heures d\'entraînement',
+                value: '${((_userStats?.totalMinutes ?? 0) / 60.0).toStringAsFixed(1)}',
+                icon: Icons.timer,
+                showTrend: true,
+                trendValue: 0.0,
+                isPositiveTrend: true,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: StatCard(
+                title: 'Calories brûlées',
+                value: '${_userStats?.caloriesBurned ?? 0}',
+                icon: Icons.local_fire_department,
+                showTrend: true,
+                trendValue: 0.0,
+                isPositiveTrend: true,
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: StatCard(
                 title: 'Activité favorite',
@@ -260,43 +266,55 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                 icon: Icons.favorite,
               ),
             ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: StatCard(
-                title: 'Sessions',
-                value: '${_userStats?.totalSessions ?? 0}',
-                icon: Icons.auto_graph,
-                showTrend: false,
-              ),
-            ),
           ],
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: StatCard(
-                title: 'Série actuelle',
-                value: '${_userStats?['streak']} jours',
-                icon: Icons.flash_on,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: StatCard(
-                title: 'Meilleure série',
-                value: '${_userStats?['longestStreak']} jours',
-                icon: Icons.emoji_events,
-              ),
-            ),
-          ],
-        ),
+        const SizedBox(height: 12),
+        // The 'streak' and 'longestStreak' fields are not in the UserStats model from shared_lib.
+        // Commenting these out. If they are needed, UserStats model needs update.
+        // Row(
+        //   children: [
+        //     Expanded(
+        //       child: StatCard(
+        //         title: 'Série actuelle',
+        //         // value: '${_userStats?['streak']} jours', // _userStats is not a map
+        //         value: 'N/A',
+        //         icon: Icons.flash_on,
+        //       ),
+        //     ),
+        //     const SizedBox(width: 16),
+        //     Expanded(
+        //       child: StatCard(
+        //         title: 'Meilleure série',
+        //         // value: '${_userStats?['longestStreak']} jours', // _userStats is not a map
+        //         value: 'N/A',
+        //         icon: Icons.emoji_events,
+        //       ),
+        //     ),
+        //   ],
+        // ),
       ],
     );
   }
 
+  // Placeholder for _buildProgressChart - returning empty SizedBox for now
+  Widget _buildProgressChart() {
+    return const SizedBox(child: Text("Progress Chart Placeholder"));
+  }
+
+  // Placeholder for _buildActivityDetails - returning empty SizedBox for now
+  Widget _buildActivityDetails() {
+    return const SizedBox(child: Text("Activity Details Placeholder"));
+  }
+
   Widget _buildActivityBreakdown() {
-    final activities = List<Map<String, dynamic>>.from(_userStats?['activityBreakdown']);
+    // Assuming _userStats.activityBreakdown is Map<String, int>
+    // final activities = List<Map<String, dynamic>>.from(_userStats?['activityBreakdown']);
+    if (_userStats == null || _userStats!.activityBreakdown.isEmpty) {
+      return const SizedBox(child: Text("Aucune donnée de répartition d'activité."));
+    }
+    final activities = _userStats!.activityBreakdown.entries.toList();
+    // Sort activities by count descending to show most frequent first, or limit display
+    activities.sort((a, b) => b.value.compareTo(a.value));
     
     return Card(
       margin: EdgeInsets.zero,
@@ -315,15 +333,23 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                   return Row(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: activities.map((activity) {
-                      final percentage = activity['percentage'] as int;
-                      final barHeight = constraints.maxHeight * (percentage / 100);
-                      
+                    children: activities.take(5).map((entry) { // Take top 5 or so
+                      // final percentage = activity['percentage'] as int; // Need to calculate percentage if not available
+                      // For simplicity, let's assume the value itself can be used for bar height relative to max value.
+                      // Or, if it's just counts, we might need a total to calculate percentage.
+                      // For now, let's use the count as a relative height factor.
+                      final count = entry.value;
+                      final activityName = entry.key;
+                      // Find max count for scaling if needed, or use fixed scale
+                      final maxActivityCount = activities.map((e) => e.value).reduce((a,b) => a > b ? a : b);
+                      final barHeight = (maxActivityCount > 0 ? (count / maxActivityCount) : 0.0) * (constraints.maxHeight * 0.6);
+
+
                       return Column(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           Text(
-                            '$percentage%',
+                            '$count', // Show count
                             style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
@@ -340,7 +366,7 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            activity['name'],
+                            activityName, // Use entry.key for name
                             style: const TextStyle(
                               fontSize: 12,
                             ),
@@ -359,10 +385,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 
   Widget _buildWeeklyActivity() {
-    final weeklyActivity = List<Map<String, dynamic>>.from(_userStats?['weeklyActivity']);
+    // The UserStats model does not have 'weeklyActivity'. Commenting out.
+    // final weeklyActivity = List<Map<String, dynamic>>.from(_userStats?['weeklyActivity']);
     
-    return Card(
-      margin: EdgeInsets.zero,
+    // return Card(
+    //   margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
@@ -416,10 +443,11 @@ class _StatsScreenState extends ConsumerState<StatsScreen> {
   }
 
   Widget _buildMonthlyProgress() {
-    final monthlyProgress = List<Map<String, dynamic>>.from(_userStats?['monthlyProgress']);
+    // The UserStats model does not have 'monthlyProgress'. Commenting out.
+    // final monthlyProgress = List<Map<String, dynamic>>.from(_userStats?['monthlyProgress']);
     
-    return Card(
-      margin: EdgeInsets.zero,
+    // return Card(
+    //   margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),

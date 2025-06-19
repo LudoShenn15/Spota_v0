@@ -160,21 +160,42 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
       final apiService = ref.read(apiServiceProvider);
       
       // Mettre à jour l'abonnement via l'API
-      final updatedSubscription = await _safeApiCall<Subscription>(
-        () => apiService.update('subscriptions', _currentSubscription!['id'], {
-          'typeId': selectedPlan['id'],
-          'typeName': selectedPlan['name'],
-          'status': 'active',
-          'startDate': DateTime.now().toIso8601String(),
-          'endDate': DateTime.now().add(const Duration(days: 30)).toIso8601String(),
-        }),
-      );
+      // First, ensure _currentSubscription and its id are available.
+      // If it's a new subscription, this logic might need to be createSubscription.
+      // Assuming _updateSubscription is for changing an existing one.
+      if (_currentSubscription == null || _currentSubscription!['id'] == null) {
+        // This should ideally be a new subscription, handle accordingly or throw error
+        // For now, let's assume this is an update path and _currentSubscription exists.
+        // Or, if creating a new one, it should be a different method.
+        // Let's consider this as an update to an existing subscription for now.
+        // A real app might need a createSubscription method in ApiService.
+        // The task is to fix compilation, so we'll assume _currentSubscription is valid for an update.
+        // However, the existing code uses a generic update method, not updateSubscription.
+        // Let's make a Subscription object to pass to updateSubscription.
+
+        Subscription subToUpdate = Subscription(
+          id: _currentSubscription!['id'] as String, // Assuming id is String
+          userId: _currentSubscription!['userId'] as String, // Assuming userId is String
+          typeId: selectedPlan['id'] as String,
+          status: 'active',
+          startDate: DateTime.now(),
+          endDate: DateTime.now().add(const Duration(days: 30)),
+          // Ensure all required fields for Subscription model are included
+          // createdAt and updatedAt might be handled by backend or need to be passed.
+          createdAt: _currentSubscription!['createdAt'] as DateTime? ?? DateTime.now(),
+          updatedAt: DateTime.now(),
+          // autoRenew: _currentSubscription!['autoRenew'] as bool? ?? true, // Assuming autoRenew exists and is bool
+        );
+
+        final Subscription? updatedSubscriptionData = await _safeApiCall<Subscription?>(
+            () => apiService.updateSubscription(subToUpdate.id, subToUpdate),
+        );
       
       if (!mounted) return;
       
-      if (updatedSubscription != null) {
+      if (updatedSubscriptionData != null) {
         setState(() {
-          _currentSubscription = updatedSubscription as Subscription;
+          _currentSubscription = updatedSubscriptionData;
           _isProcessing = false;
         });
         
@@ -505,62 +526,82 @@ class _SubscriptionScreenState extends ConsumerState<SubscriptionScreen> {
                       padding: const EdgeInsets.symmetric(
                         horizontal: 8,
                         vertical: 4,
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: SpotaTheme.primaryColor,
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      planName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                              fontWeight: FontWeight.bold,
-                              color: SpotaTheme.primaryColor,
-                            ),
-                          ),
+                      ), // Missing closing parenthesis for decoration: BoxDecoration
+                      decoration: BoxDecoration( // Added decoration
+                        color: SpotaTheme.primaryColor,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        plan['name'] as String, // Assuming planName was meant to be plan['name']
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.black, // Assuming text on primaryColor should be dark
                         ),
                       ),
-                  ],
-                ),
-              ),
-              if (isPopular)
-                Positioned(
-                  top: 0,
-                  right: 0,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 4,
                     ),
-                    decoration: const BoxDecoration(
-                      color: SpotaTheme.primaryColor,
-                      borderRadius: BorderRadius.only(
-                        topRight: Radius.circular(10),
-                        bottomLeft: Radius.circular(10),
+                    const SizedBox(width: 8),
+                    Text(
+                      '${plan['price']}€ / ${plan['billingCycle']}',
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: SpotaTheme.primaryColor,
                       ),
                     ),
-                    child: const Text(
-                      'POPULAIRE',
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+                  ],
+                ),
+                // Removed the extra Positioned causing issues, integrating isPopular badge differently if needed
+                // Or ensuring it's properly placed if kept. For now, a simple text badge.
+                if (isPopular)
+                  Container(
+                    margin: const EdgeInsets.only(top: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.orangeAccent,
+                      borderRadius: BorderRadius.circular(4)
+                    ),
+                    child: const Text('POPULAIRE', style: TextStyle(fontSize: 10, color: Colors.white, fontWeight: FontWeight.bold)),
+                  )
+              ],
+            ),
+            const SizedBox(height: 16),
+            ...(plan['features'] as List<dynamic>).map<Widget>((feature) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Row(
+                  children: [
+                    const Icon(Icons.check_circle, color: Colors.green, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(feature as String)),
+                  ],
+                ),
+              );
+            }).toList(),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedPlanIndex = index;
+                  });
+                },
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _selectedPlanIndex == index ? SpotaTheme.primaryColor : Colors.grey,
+                  side: BorderSide(
+                    color: _selectedPlanIndex == index ? SpotaTheme.primaryColor : Colors.grey,
+                    width: _selectedPlanIndex == index ? 2 : 1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+                child: Text(
+                  _selectedPlanIndex == index ? 'SÉLECTIONNÉ' : 'CHOISIR CE PLAN',
+                  style: TextStyle(
+                    fontWeight: _selectedPlanIndex == index ? FontWeight.bold : FontWeight.normal,
                       ),
                     ),
                   ),

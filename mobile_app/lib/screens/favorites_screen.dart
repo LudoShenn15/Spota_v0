@@ -218,14 +218,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
             const SizedBox(height: 16),
             Text(
               'Aucun cours favori',
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87), // Added color with fallback
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               'Ajoutez des cours à vos favoris pour les retrouver ici.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: SpotaTheme.secondaryTextColor),
+              style: TextStyle(color: SpotaTheme.secondaryTextColor), // This was likely correct
             ),
             const SizedBox(height: 24),
             ElevatedButton(
@@ -266,14 +266,14 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                 const SizedBox(height: 16),
                 Text(
                   'Aucun coach favori',
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Theme.of(context).textTheme.bodyLarge?.color ?? Colors.black87), // Added color with fallback
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Ajoutez des coachs à vos favoris pour les retrouver ici.',
                   textAlign: TextAlign.center,
-                  style: TextStyle(color: SpotaTheme.secondaryTextColor),
+                  style: TextStyle(color: SpotaTheme.secondaryTextColor), // This was likely correct
                 ),
                 const SizedBox(height: 24),
                 ElevatedButton(
@@ -360,7 +360,7 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                       // Titre
                       Expanded(
                         child: Text(
-                          'course.title,
+                          course.title, // Corrected string interpolation
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -373,9 +373,9 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                       IconButton(
                         icon: const Icon(
                           Icons.favorite,
-                           Colors.red,
+                          color: Colors.red, // Corrected Icon constructor
                         ),
-                        onPressed: () => _removeFromFavorites('cours'e.id, true),
+                        onPressed: () => _removeFromFavorites(course.id, true), // Corrected interpolation/typo
                       ),
                     ],
                   ),
@@ -383,16 +383,19 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                   // Coach
                   Row(
                     children: [
-                      const Icon(
+                      Icon( // Corrected Icon constructor
                         Icons.person,
-                         16,
-                         SpotaTheme.secondaryTextColor,
+                        size: 16, // Corrected Icon constructor
+                        color: SpotaTheme.secondaryTextColor, // Corrected Icon constructor
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        'Coach: 'course.'coach'Name ? "Non spécifié"}',
-                        style: const TextStyle(
-                           SpotaTheme.secondaryTextColor,
+                        // Assuming course.coachId and a helper to get name, or direct course.coachName
+                        // For now, using course.coachId as placeholder if coachName is not direct.
+                        // This part might need a new helper like getCoachNameById(course.coachId)
+                        'Coach: ${course.coachId}', // Corrected string interpolation, placeholder for coach name
+                        style: TextStyle( // Corrected TextStyle constructor
+                          color: SpotaTheme.secondaryTextColor,
                         ),
                       ),
                     ],
@@ -401,16 +404,16 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                   // Évaluation
                   Row(
                     children: [
-                      const Icon(
+                      Icon( // Corrected Icon constructor
                         Icons.star,
-                         16,
-                         Colors.amber,
+                        size: 16, // Corrected Icon constructor
+                        color: Colors.amber, // Corrected Icon constructor
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        ''course.rating ? 0.0} ('cours'e.reviewCount ? 0} avis)',
-                        style: const TextStyle(
-                           SpotaTheme.secondaryTextColor,
+                        '${course.rating ?? 0.0} (${course.reviewCount ?? 0} avis)', // Corrected string interpolation
+                        style: TextStyle( // Corrected TextStyle constructor
+                          color: SpotaTheme.secondaryTextColor,
                         ),
                       ),
                     ],
@@ -420,17 +423,17 @@ class _FavoritesScreenState extends ConsumerState<FavoritesScreen> with SingleTi
                   Row(
                     children: [
                       _buildInfoChip(
-                        ''course.duration ? 0} min',
+                        '${course.duration ?? 0} min', // Corrected string interpolation
                         Icons.timer,
                       ),
                       const SizedBox(width: 8),
                       _buildInfoChip(
-                        'course.level ? 'Non spécifié',
+                        course.level ?? 'Non spécifié', // Corrected null aware and string literal
                         Icons.fitness_center,
                       ),
                       const SizedBox(width: 8),
                       _buildInfoChip(
-                        'course.category ? 'Non spécifié',
+                        course.category ?? 'Non spécifié', // Corrected null aware and string literal
                         Icons.category,
                       ),
                     ],

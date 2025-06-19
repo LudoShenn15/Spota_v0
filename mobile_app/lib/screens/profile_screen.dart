@@ -206,79 +206,76 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                       ),
                     ),
                   ),
-                ],
-                
-                // Contenu principal
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Informations personnelles
-                        _buildSectionTitle('Informations personnelles'),
-                        _buildInfoCard([
-                          _buildInfoRow(
-                            icon: Icons.email,
-                            title: 'Email',
-                            value: _user?.email ?? 'Non renseigné',
-                          ),
-                          _buildInfoRow(
-                            icon: Icons.phone_outlined,
-                            title: 'Téléphone',
-                            value: _user?.phone ?? 'N/A',
-                          ),
-                          _buildInfoRow(
-                            icon: Icons.calendar_today,
-                            title: 'Membre depuis',
-                            value: _user?.createdAt != null 
-                                ? _formatDate(_user!.createdAt) 
-                                : 'Non renseigné',
-                          ),
-                        ]),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Abonnement
-                        _buildSubscriptionCard(),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Statistiques
-                        _buildSectionTitle('Statistiques'),
-                        _buildStatsCard(),
-                        
-                        const SizedBox(height: 24),
-                        
-                        // Actions
-                        _buildSectionTitle('Actions'),
-                        _buildActionsList(),
-                        
-                        const SizedBox(height: 32),
-                        
-                        // Bouton de déconnexion
-                        SizedBox(
-                          width: double.infinity,
-                          child: OutlinedButton.icon(
-                            onPressed: _logout,
-                            icon: const Icon(Icons.logout),
-                            label: const Text('DÉCONNEXION'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.red,
-                              side: const BorderSide(color: Colors.red),
+                  // IMPORTANT FIX: SliverToBoxAdapter must be INSIDE the slivers list
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Informations personnelles
+                          _buildSectionTitle('Informations personnelles'),
+                          _buildInfoCard([
+                            _buildInfoRow(
+                              icon: Icons.email,
+                              title: 'Email',
+                              value: _user?.email ?? 'Non renseigné',
+                            ),
+                            _buildInfoRow(
+                              icon: Icons.phone_outlined,
+                              title: 'Téléphone',
+                              value: _user?.phone ?? 'N/A',
+                            ),
+                            _buildInfoRow(
+                              icon: Icons.calendar_today,
+                              title: 'Membre depuis',
+                              value: _user?.createdAt != null
+                                  ? _formatDate(_user!.createdAt!) // Added ! for null safety, assuming createdAt is DateTime
+                                  : 'Non renseigné',
+                            ),
+                          ]),
+
+                          const SizedBox(height: 24),
+
+                          // Abonnement
+                          _buildSubscriptionCard(),
+
+                          const SizedBox(height: 24),
+
+                          // Statistiques
+                          _buildSectionTitle('Statistiques'),
+                          _buildStatsCard(),
+
+                          const SizedBox(height: 24),
+
+                          // Actions
+                          _buildSectionTitle('Actions'),
+                          _buildActionsList(),
+
+                          const SizedBox(height: 32),
+
+                          // Bouton de déconnexion
+                          SizedBox(
+                            width: double.infinity,
+                            child: OutlinedButton.icon(
+                              onPressed: _logout,
+                              icon: const Icon(Icons.logout),
+                              label: const Text('DÉCONNEXION'),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.red,
+                                side: const BorderSide(color: Colors.red),
+                              ),
                             ),
                           ),
-                        ),
-                        
-                        const SizedBox(height: 16),
-                      ],
+
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              ],
-            ), // Closes CustomScrollView or Center
-          ), // Closes RefreshIndicator's child or body if _isLoading is true
-        ), // Closes RefreshIndicator
+                ], // This closes the slivers list of CustomScrollView
+              ), // This closes CustomScrollView
+      ), // Closes RefreshIndicator
     ); // Closes Scaffold
   }
 
@@ -608,7 +605,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(DateTime date) { // Added null check for date, though User model makes it non-null
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
