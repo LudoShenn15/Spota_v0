@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart'; // Added GetX import
 import 'package:shared_lib/models/booking.dart';
-import 'package:shared_lib/models/user.dart';
+import 'package:shared_lib/models/user.dart'; // User model
 import 'package:shared_lib/models/course.dart';
 import 'package:shared_lib/services/api_service.dart';
 import '../components/sidebar.dart';
@@ -15,9 +16,9 @@ class BookingsScreen extends StatefulWidget {
 }
 
 class _BookingsScreenState extends State<BookingsScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = Get.find<ApiService>();
   List<Booking> bookings = [];
-  List<AppUser> users = [];
+  List<User> users = []; // Changed AppUser to User
   List<Course> courses = [];
   bool isLoading = true;
   String? error;
@@ -64,15 +65,16 @@ class _BookingsScreenState extends State<BookingsScreen> {
   String getUserName(String userId) {
     final user = users.firstWhere(
       (user) => user.id == userId,
-      orElse: () => AppUser(
+      orElse: () => User(
         id: 'unknown',
-        email: 'unknown',
-        name: 'Utilisateur inconnu',
+        email: 'unknown@example.com',
+        fullName: 'Utilisateur inconnu',
+        isAdmin: false, // Corrected: Use isAdmin instead of role
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
     );
-    return user.name;
+    return user.fullName; // Changed user.name to user.fullName
   }
 
   String getCourseName(String courseId) {
@@ -81,10 +83,15 @@ class _BookingsScreenState extends State<BookingsScreen> {
       orElse: () => Course(
         id: 'unknown',
         title: 'Cours inconnu',
-        coachId: 'unknown',
+        coachId: 'unknown', // Kept as unknown
         capacity: 0,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
+        // duration: 60, // duration is not required by Course constructor
+        // category: '', // category is not required by Course constructor
+        // difficulty: '', // difficulty is not required
+        // imageUrl: '', // imageUrl is not required
+        // isActive: false, // isActive is not required
       ),
     );
     return course.title;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_lib/models/user.dart';
+import 'package:get/get.dart'; // Added GetX import
+import 'package:shared_lib/models/user.dart'; // User model
 import 'package:shared_lib/services/api_service.dart';
 import '../components/sidebar.dart';
 import '../components/modern_button.dart';
@@ -13,8 +14,8 @@ class UsersScreen extends StatefulWidget {
 }
 
 class _UsersScreenState extends State<UsersScreen> {
-  final ApiService _apiService = ApiService();
-  List<AppUser> users = [];
+  final ApiService _apiService = Get.find<ApiService>(); // Replaced with Get.find
+  List<User> users = []; // Changed AppUser to User
   bool isLoading = true;
   String? error;
   String searchQuery = '';
@@ -47,10 +48,10 @@ class _UsersScreenState extends State<UsersScreen> {
     }
   }
 
-  List<AppUser> get filteredUsers {
+  List<User> get filteredUsers { // Changed AppUser to User
     if (searchQuery.isEmpty) return users;
     return users.where((user) => 
-      user.name.toLowerCase().contains(searchQuery.toLowerCase()) ||
+      user.fullName.toLowerCase().contains(searchQuery.toLowerCase()) || // user.name to user.fullName
       user.email.toLowerCase().contains(searchQuery.toLowerCase())
     ).toList();
   }
@@ -196,12 +197,12 @@ class _UsersScreenState extends State<UsersScreen> {
       separatorBuilder: (context, index) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final user = filteredUsers[index];
-        return _buildUserCard(user);
+        return _buildUserCard(user); // Parameter type will be User due to filteredUsers type
       },
     );
   }
 
-  Widget _buildUserCard(AppUser user) {
+  Widget _buildUserCard(User user) { // Changed AppUser to User
     return Card(
       elevation: 0,
       color: Theme.of(context).colorScheme.surface,
@@ -212,9 +213,9 @@ class _UsersScreenState extends State<UsersScreen> {
           children: [
             CircleAvatar(
               radius: 24,
-              backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(26), // Équivalent à withOpacity(0.1)
+              backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(26),
               child: Text(
-                user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?', // user.name to user.fullName
                 style: TextStyle(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -228,7 +229,7 @@ class _UsersScreenState extends State<UsersScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    user.name,
+                    user.fullName, // user.name to user.fullName
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -244,7 +245,7 @@ class _UsersScreenState extends State<UsersScreen> {
               ),
             ),
             custom_badge.Badge(
-              text: _getUserRole(user),
+              text: _getUserRoleText(user),
               type: _getRoleBadgeType(user),
             ),
             const SizedBox(width: 16),
@@ -289,26 +290,18 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  String _getUserRole(AppUser user) {
-    // Comme nous n'avons pas les propriétés isAdmin et isCoach dans le modèle AppUser actuel,
-    // nous pouvons utiliser l'email comme heuristique temporaire ou implémenter une logique personnalisée
-    if (user.email.contains('admin')) return 'Admin';
-    // Vérifier si l'utilisateur est un coach en vérifiant s'il existe dans la table des coaches
-    // Pour l'instant, nous retournons 'Membre' par défaut
-    return 'Membre';
+  String _getUserRoleText(User user) { // Changed parameter to User
+    return user.isAdmin ? 'Admin' : 'Membre';
   }
 
-  custom_badge.BadgeType _getRoleBadgeType(AppUser user) {
-    // Utiliser la même logique que _getUserRole
-    if (user.email.contains('admin')) return custom_badge.BadgeType.error;
-    // Pour l'instant, nous retournons BadgeType.info par défaut
-    return custom_badge.BadgeType.info;
+  custom_badge.BadgeType _getRoleBadgeType(User user) { // Changed parameter to User
+    return user.isAdmin ? custom_badge.BadgeType.error : custom_badge.BadgeType.info;
   }
 
   void _showAddUserDialog(BuildContext context) {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
-    String selectedRole = 'Membre';
+    bool isAdminSelected = false; // Use boolean for isAdmin
 
     showDialog(
       context: context,
@@ -337,20 +330,18 @@ class _UsersScreenState extends State<UsersScreen> {
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
+                    DropdownButtonFormField<bool>( // Dropdown for isAdmin
                       decoration: const InputDecoration(
                         labelText: 'Rôle',
                       ),
-                      value: selectedRole,
-                      items: ['Admin', 'Coach', 'Membre']
-                          .map((role) => DropdownMenuItem(
-                                value: role,
-                                child: Text(role),
-                              ))
-                          .toList(),
+                      value: isAdminSelected,
+                      items: const [
+                        DropdownMenuItem(value: true, child: Text('Admin')),
+                        DropdownMenuItem(value: false, child: Text('Membre')),
+                      ],
                       onChanged: (value) {
                         setState(() {
-                          selectedRole = value!;
+                          isAdminSelected = value ?? false;
                         });
                       },
                     ),
@@ -371,15 +362,19 @@ class _UsersScreenState extends State<UsersScreen> {
                       return;
                     }
 
-                    final newUser = AppUser(
+                    final newUser = User(
                       id: 'temp-${DateTime.now().millisecondsSinceEpoch}',
                       email: emailController.text,
-                      name: nameController.text,
+                      fullName: nameController.text,
+                      isAdmin: isAdminSelected, // Use boolean value
                       createdAt: DateTime.now(),
                       updatedAt: DateTime.now(),
                     );
 
                     try {
+                      // Assuming createUser can take this User object.
+                      // The actual createUser in ApiService takes user.toJson()
+                      // which should be fine if User model has toJson()
                       await _apiService.createUser(newUser);
                       _loadData();
                       Navigator.pop(context);
@@ -399,10 +394,10 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  void _showEditUserDialog(BuildContext context, AppUser user) {
-    final nameController = TextEditingController(text: user.name);
+  void _showEditUserDialog(BuildContext context, User user) { // Changed AppUser to User
+    final nameController = TextEditingController(text: user.fullName);
     final emailController = TextEditingController(text: user.email);
-    String selectedRole = _getUserRole(user);
+    bool isAdminSelected = user.isAdmin; // Use boolean for isAdmin
 
     showDialog(
       context: context,
@@ -431,20 +426,18 @@ class _UsersScreenState extends State<UsersScreen> {
                       keyboardType: TextInputType.emailAddress,
                     ),
                     const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
+                    DropdownButtonFormField<bool>( // Dropdown for isAdmin
                       decoration: const InputDecoration(
                         labelText: 'Rôle',
                       ),
-                      value: selectedRole,
-                      items: ['Admin', 'Coach', 'Membre']
-                          .map((role) => DropdownMenuItem(
-                                value: role,
-                                child: Text(role),
-                              ))
-                          .toList(),
+                      value: isAdminSelected,
+                      items: const [
+                        DropdownMenuItem(value: true, child: Text('Admin')),
+                        DropdownMenuItem(value: false, child: Text('Membre')),
+                      ],
                       onChanged: (value) {
                         setState(() {
-                          selectedRole = value!;
+                          isAdminSelected = value ?? false;
                         });
                       },
                     ),
@@ -458,10 +451,13 @@ class _UsersScreenState extends State<UsersScreen> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    final updatedUser = AppUser(
+                    final updatedUser = User(
                       id: user.id,
                       email: emailController.text,
-                      name: nameController.text,
+                      fullName: nameController.text,
+                      isAdmin: isAdminSelected, // Use boolean value
+                      phone: user.phone, // retain existing non-editable fields
+                      photoUrl: user.photoUrl, // retain existing non-editable fields
                       createdAt: user.createdAt,
                       updatedAt: DateTime.now(),
                     );
@@ -486,13 +482,13 @@ class _UsersScreenState extends State<UsersScreen> {
     );
   }
 
-  void _showDeleteConfirmation(BuildContext context, AppUser user) {
+  void _showDeleteConfirmation(BuildContext context, User user) { // Changed AppUser to User
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Confirmer la suppression'),
-          content: Text('Êtes-vous sûr de vouloir supprimer l\'utilisateur "${user.name}" ?'),
+          content: Text('Êtes-vous sûr de vouloir supprimer l\'utilisateur "${user.fullName}" ?'), // user.name to user.fullName
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),

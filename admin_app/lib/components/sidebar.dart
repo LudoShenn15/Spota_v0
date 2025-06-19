@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:get/get.dart';
+import 'package:shared_lib/services/api_service.dart';
 
 class Sidebar extends StatelessWidget {
   final int selectedIndex;
@@ -17,7 +19,9 @@ class Sidebar extends StatelessWidget {
           const SizedBox(height: 32),
           _buildNavigation(context),
           const Spacer(),
-          _buildProfile(context),
+          _buildProfile(context), // User profile info
+          const Divider(height: 1, thickness: 1),
+          _buildLogoutItem(context), // Logout button
         ],
       ),
     );
@@ -178,12 +182,54 @@ class Sidebar extends StatelessWidget {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.logout),
+            icon: const Icon(Icons.more_vert), // Changed to more_vert for profile options if any
             onPressed: () {
-              // TODO: Implement logout
+              // Could open a profile menu or settings related to the admin user
             },
+            tooltip: 'Options du profil',
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutItem(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Material(
+        color: Colors.transparent,
+        child: ListTile(
+          onTap: () async {
+            final ApiService apiService = Get.find<ApiService>();
+            try {
+              await apiService.signOut();
+              // Ensure context is still valid before navigating
+              if (context.mounted) {
+                context.go('/login');
+              }
+            } catch (e) {
+              // Handle error, e.g., show a snackbar
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur de déconnexion: ${e.toString()}'))
+                );
+              }
+            }
+          },
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          leading: Icon(
+            Icons.logout,
+            color: Theme.of(context).colorScheme.onSurface.withOpacity(0.64),
+          ),
+          title: Text(
+            'Déconnexion',
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurface,
+            ),
+          ),
+        ),
       ),
     );
   }

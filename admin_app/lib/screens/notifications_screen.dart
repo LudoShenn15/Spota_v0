@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:shared_lib/models/user.dart';
+import 'package:get/get.dart'; // Added GetX import
+import 'package:shared_lib/models/user.dart'; // User model
 import 'package:shared_lib/services/api_service.dart';
 import '../components/sidebar.dart';
 import '../components/modern_button.dart';
@@ -14,12 +15,12 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = Get.find<ApiService>(); // Replaced with Get.find
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
   
-  List<AppUser> users = [];
+  List<User> users = []; // Changed AppUser to User
   List<String> selectedUsers = [];
   bool isLoading = true;
   bool isSending = false;
@@ -148,7 +149,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
   
-  void _toggleUserSelection(AppUser user) {
+  void _toggleUserSelection(User user) { // Changed AppUser to User
     setState(() {
       if (selectedUsers.contains(user.id)) {
         selectedUsers.remove(user.id);
@@ -158,13 +159,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     });
   }
 
-  List<AppUser> _getFilteredUsers() {
+  List<User> _getFilteredUsers() { // Changed AppUser to User
     if (searchQuery.isEmpty) {
       return users;
     }
     
     return users.where((user) {
-      final name = user.name.toLowerCase();
+      final name = user.fullName.toLowerCase(); // Changed user.name to user.fullName
       final email = user.email.toLowerCase();
       final query = searchQuery.toLowerCase();
       
@@ -387,13 +388,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                     leading: CircleAvatar(
                                                       backgroundColor: Theme.of(context).colorScheme.primary.withAlpha(26),
                                                       child: Text(
-                                                        user.name.isNotEmpty ? user.name[0].toUpperCase() : '?',
+                                                        user.fullName.isNotEmpty ? user.fullName[0].toUpperCase() : '?', // Changed user.name to user.fullName
                                                         style: TextStyle(
                                                           color: Theme.of(context).colorScheme.primary,
                                                         ),
                                                       ),
                                                     ),
-                                                    title: Text(user.name),
+                                                    title: Text(user.fullName), // Changed user.name to user.fullName
                                                     subtitle: Text(user.email),
                                                     trailing: Checkbox(
                                                       value: isSelected,

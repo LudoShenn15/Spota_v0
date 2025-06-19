@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:get/get.dart'; // Added GetX import
+import 'package:shared_lib/services/api_service.dart'; // Added ApiService import
 import 'app.dart';
 import 'package:shared_lib/config/supabase_config.dart';
 
@@ -96,11 +98,25 @@ Future<void> initializeApp() async {
       if (kDebugMode) {
         print('Supabase initialisé avec succès');
       }
+
+      // Initialize ApiService with GetX
+      final supabaseClient = Supabase.instance.client;
+      final apiService = ApiService(supabaseClient);
+      Get.put<ApiService>(apiService, permanent: true);
+      if (kDebugMode) {
+        print('ApiService initialisé et enregistré avec GetX.');
+      }
+
     } catch (e) {
       if (kDebugMode) {
         print('Erreur lors de l\'initialisation de Supabase: $e');
         print('Continuons sans Supabase...');
       }
+      // If Supabase fails, ApiService might not be initialized with a valid client.
+      // Depending on app requirements, might want to handle this case (e.g. put a dummy/offline ApiService).
+      // For now, if Supabase init fails, Get.put for ApiService might not be reached or might use a null/unusable client.
+      // The current _initializeWithTimeout catches and can allow continuing without Supabase on web.
+      // If Supabase is critical, the rethrow on mobile in _initializeWithTimeout would prevent reaching Get.put.
     }
     
     if (kDebugMode) {

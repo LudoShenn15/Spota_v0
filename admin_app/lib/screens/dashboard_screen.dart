@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:shared_lib/models/coach.dart';
 import 'package:shared_lib/models/booking.dart';
-import 'package:shared_lib/models/user.dart';
+import 'package:shared_lib/models/user.dart'; // User model
 import 'package:shared_lib/models/course.dart';
 import 'package:shared_lib/services/api_service.dart';
+import 'package:get/get.dart'; // Added GetX import
 import '../components/stat_card.dart';
 import '../components/modern_button.dart';
 import '../components/badge.dart' as app_badge;
@@ -22,10 +23,10 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = Get.find<ApiService>(); // Replaced with Get.find
   List<Coach> coaches = [];
   List<Booking> bookings = [];
-  List<AppUser> users = [];
+  List<User> users = []; // Changed AppUser to User
   List<Course> courses = [];
   int selectedTabIndex = 0;
   bool isLoading = true;
@@ -68,16 +69,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String getUserName(String userId) {
     final user = users.firstWhere(
       (user) => user.id == userId,
-      orElse: () => AppUser(
+      orElse: () => User(
         id: 'unknown',
         email: 'unknown@example.com',
-        name: 'Utilisateur inconnu',
-        phone: '',
+        fullName: 'Utilisateur inconnu',
+        isAdmin: false, // Corrected: Use isAdmin instead of role
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
     );
-    return user.name;
+    return user.fullName; // Changed user.name to user.fullName
   }
 
   String getCourseName(String courseId) {

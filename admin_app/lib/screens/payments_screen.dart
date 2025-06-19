@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_lib/models/subscription.dart';
 import 'package:shared_lib/models/subscription_type.dart';
-import 'package:shared_lib/models/user.dart';
+import 'package:shared_lib/models/user.dart'; // User model
 import 'package:shared_lib/services/api_service.dart';
+import 'package:get/get.dart'; // Added GetX import
 import '../components/sidebar.dart';
 import '../components/badge.dart' as custom_badge;
 import '../components/modern_button.dart';
@@ -16,10 +17,10 @@ class PaymentsScreen extends StatefulWidget {
 }
 
 class _PaymentsScreenState extends State<PaymentsScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = Get.find<ApiService>(); // Replaced with Get.find
   List<Subscription> subscriptions = [];
   List<SubscriptionType> subscriptionTypes = [];
-  List<AppUser> users = [];
+  List<User> users = []; // Changed AppUser to User
   bool isLoading = true;
   String? error;
   String statusFilter = 'Tous';
@@ -68,15 +69,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   String getUserName(String userId) {
     final user = users.firstWhere(
       (user) => user.id == userId,
-      orElse: () => AppUser(
+      orElse: () => User(
         id: userId,
-        email: 'Unknown',
-        name: 'Unknown User',
+        email: 'unknown@example.com',
+        fullName: 'Unknown User',
+        isAdmin: false, // Corrected: Use isAdmin instead of role
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       ),
     );
-    return user.name;
+    return user.fullName; // Changed user.name to user.fullName
   }
 
   SubscriptionType getSubscriptionType(String typeId) {

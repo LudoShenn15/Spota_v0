@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart'; // Added GetX import
 import 'package:shared_lib/models/coach.dart';
 import 'package:shared_lib/services/api_service.dart';
 import '../components/modern_button.dart';
@@ -15,7 +16,7 @@ class CoachesScreen extends StatefulWidget {
 }
 
 class _CoachesScreenState extends State<CoachesScreen> {
-  final ApiService _apiService = ApiService();
+  final ApiService _apiService = Get.find<ApiService>(); // Replaced with Get.find
   List<Coach> coaches = [];
   bool isLoading = true;
   String? error;

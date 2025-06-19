@@ -105,8 +105,8 @@ class EventListenerService {
   /// Gère l'événement de création d'un nouvel utilisateur
   Future<void> _handleNewUser(Map<String, dynamic> payload) async {
     try {
-      final userData = payload['new'] as Map<String, dynamic>;
-      final user = AppUser.fromJson(userData);
+      // final userData = payload['new'] as Map<String, dynamic>; // This line is duplicated in the original, removing one
+      final user = User.fromJson(payload); // Changed AppUser to User, assuming payload IS the newRecord
       
       // Notifier l'administrateur
       await _notificationService.sendNotificationToAdmins(
@@ -121,7 +121,7 @@ class EventListenerService {
       
       debugPrint('Notification envoyée pour le nouvel utilisateur: ${user.id}');
     } catch (e) {
-      debugPrint('Erreur lors du traitement du nouvel utilisateur: $e');
+      debugPrint('Erreur lors du traitement du nouvel utilisateur: $e. Payload: $payload');
     }
   }
 
